@@ -1,0 +1,41 @@
+# Adding these items to your Cygwin .bashrc file may make things more convenient
+
+#####################################################################
+# Path/Directory related
+#####################################################################
+
+# Change directory to whatever is currently in the *Windows* clipboard
+# e.g. Copy a directory path from Windows Explorer, then execute this function
+cdc()
+{
+        cb=$(cat /dev/clipboard)
+        test -n "$cb" || { echo "Cannot 'cd': Windows clipboard is empty"; return 0; }
+        cd "$cb"
+}
+
+# Open Windows Explorer at present working directory
+alias winx='explorer.exe /e,$(cygpath -w -a .)'
+
+
+#####################################################################
+# Package-related
+#####################################################################
+
+# Assuming you have linked ~/dl to your Windows "Downloads" folder, and that
+# you store your Cygwin(64) setup/installer programme there, these aliases can
+# be used to perform package installations or upgrades.
+alias cyg_install='~/dl/setup-x86_64.exe --quiet-mode --packages'
+alias cyg_upgrade='~/dl/setup-x86_64.exe --quiet-mode --upgrade-also'
+
+
+#####################################################################
+# Miscellaneous
+#####################################################################
+
+# Simplifies the call to 'bc' to perform arithmetic; sed cleans the output
+calc()
+{
+	bc --mathlib <<< "$*" | sed -r 's/^\./0./; s/\.?0+$//'
+}
+
+#EOF
