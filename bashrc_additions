@@ -32,10 +32,10 @@ alias cyg_upgrade='~/dl/setup-x86_64.exe --quiet-mode --upgrade-also'
 # Miscellaneous
 #####################################################################
 
-# Simplifies the call to 'bc' to perform arithmetic; sed cleans the output
+# Calculator: - run bc, and clean up results with sed
 calc()
 {
-	bc --mathlib <<< "$*" | sed -r 's/^\./0./; s/\.?0+$//'
+   bc --mathlib <<< "$*" | sed --regexp-extended 's/^\./0./; /\./ { s/0+$// }'
 }
 
 #EOF
