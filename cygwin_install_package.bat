@@ -10,7 +10,7 @@ if not exist %installer% echo Error - cannot find installer %installer
 if not exist %installer% goto EOF
 
 if "%1a"=="a" goto GETNAME
-set pkgname=%1
+set pkgname=%*
 goto :DOINSTALL
 
 :GETNAME
@@ -18,7 +18,9 @@ set /p pkgname="Enter name of package to install: "
 
 :DOINSTALL
 echo Package to install: %pkgname%
+@echo on
 %installer% --quiet-mode --packages %pkgname%
+@echo off
 
 :EOF
 pause
