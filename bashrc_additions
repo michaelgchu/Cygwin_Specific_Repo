@@ -13,6 +13,14 @@ cdc()
         cd "$cb"
 }
 
+# Go to the directory storing the specified item in your $PATH
+gotoexec()
+{
+	test -n "$1" || { echo 'Specify executable to go to'; return; }
+	pathname=$(which "$1" 2>/dev/null) || { echo "'$1' not in path"; return; }
+	cd "${pathname%/*}"
+}
+
 # Open Windows Explorer at present working directory
 alias winx='explorer.exe /e,$(cygpath -w -a .)'
 
@@ -35,7 +43,7 @@ alias cyg_upgrade='~/dl/setup-x86_64.exe --quiet-mode --upgrade-also'
 # Calculator: - run bc, and clean up results with sed
 calc()
 {
-   bc --mathlib <<< "$*" | sed --regexp-extended 's/^\./0./; /\./ { s/0+$// }'
+   bc --mathlib <<< "$*" | sed --regexp-extended 's/^\./0./; /\./ { s/\.?0+$// }'
 }
 
 #EOF
