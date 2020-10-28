@@ -110,12 +110,12 @@ printTitle()
 
 # Process script args/settings
 Be_Quiet='no'
-while getopts ":hqD" OPTION
+while getopts ":hqdD" OPTION
 do
 	case $OPTION in
 		h) Usage; exit 0 ;;
 		q) Be_Quiet='yes' ;;
-        d) Deps_Only='yes' ;;
+        d) Deps_Only=true ;;
 		D) test $DEV_MODE = 'yes' && set -x || DEV_MODE='yes' ;;
 		*) echo "Warning: ignoring unrecognized option -$OPTARG" ;;
 	esac
@@ -164,14 +164,15 @@ say "Identifying the files to copy for Cygwin binary '$exe' ..."
 # Explanation:
 # - cygcheck: produces the listing of all DLL files required, for each matching executable
 # - grep: filters to include only entries with the 'cygwin*' path
+# - grep (if deps only): removes specified file from list to copy only dependencies
 # - sed: clean up cygcheck output for use in the copy command
 #	("Found" appears if a full path isn't provided)
 # - sort: remove duplicates
-if [ $Deps_Only = 'no' ] ; then
+if [ $Deps_Only = false ] ; then
 	filelist=$(cygcheck "$exe" | grep --ignore-case '\\cygwin' | sed 's/^Found: //; s/^ *//' | sort --unique)
 else
-    exefullpath=$(cygpath --absolute --unix "$exe")
-    filelist=$(cygcheck "$exe" | grep -v "$exefullpath" | grep --ignore-case '\\cygwin' | sed 's/^Found: //; s/^ *//' | sort --unique)
+    exefullpath=$(cygpath --absolute --windows "$exe")
+    filelist=$(cygcheck "$exe" | grep -vF "$exefullpath" | grep --ignore-case '\\cygwin' | sed 's/^Found: //; s/^ *//' | sort --unique)
 fi
 
 say "Copying all the files to the output folder '$dir' ..."
