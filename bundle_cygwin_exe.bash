@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 SCRIPTNAME='Cygwin Executable Bundler'
-LAST_UPDATED='2016-10-12'
+LAST_UPDATED='2020-10-28'
 # Author: Michael Chu, https://github.com/michaelgchu/
 # See Usage() function for purpose and calling details
 #
 # Updates
 # =======
+# 20201028
+# - added -d option to copy dependencies only, and skip copying the executable/library specified.
 # 20161012
 # - using long argument names when calling commands; cleaned up comments
 # 20160425
@@ -28,6 +30,9 @@ alias  debugsay='test $DEV_MODE = "yes" && echo '
 
 # Whether to suppress standard script messages
 Be_Quiet=false
+
+# Whether to copy dependencies only.
+Deps_Only=false
 
 DEV_MODE='no'
 
@@ -67,6 +72,7 @@ OPTIONS
 =======
    -h    Show this message
    -q    Quiet: only output the found records and a header
+   -d    Dependencies only: don't copy the actual DLL/execuable specified
    -D    DEV/DEBUG mode on
          Use twice to run 'set -x'
 
@@ -109,6 +115,7 @@ do
 	case $OPTION in
 		h) Usage; exit 0 ;;
 		q) Be_Quiet='yes' ;;
+        d) Deps_Only='yes' ;;
 		D) test $DEV_MODE = 'yes' && set -x || DEV_MODE='yes' ;;
 		*) echo "Warning: ignoring unrecognized option -$OPTARG" ;;
 	esac
@@ -160,7 +167,12 @@ say "Identifying the files to copy for Cygwin binary '$exe' ..."
 # - sed: clean up cygcheck output for use in the copy command
 #	("Found" appears if a full path isn't provided)
 # - sort: remove duplicates
-filelist=$(cygcheck "$exe" | grep --ignore-case '\\cygwin' | sed 's/^Found: //; s/^ *//' | sort --unique)
+if [ $Deps_Only = 'no' ] ; then
+	filelist=$(cygcheck "$exe" | grep --ignore-case '\\cygwin' | sed 's/^Found: //; s/^ *//' | sort --unique)
+else
+    exefullpath=$(cygpath --absolute --unix "$exe")
+    filelist=$(cygcheck "$exe" | grep -v "$exefullpath" | grep --ignore-case '\\cygwin' | sed 's/^Found: //; s/^ *//' | sort --unique)
+fi
 
 say "Copying all the files to the output folder '$dir' ..."
 udir=$(cygpath --absolute --unix "$dir")
