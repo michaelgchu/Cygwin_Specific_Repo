@@ -44,9 +44,9 @@ Usage()
 	cat << EOM
 Usage: ${0##*/} [options] cygwinCommand folderToWriteTo
 
-Create a bundled "portable" copy of the specified Cygwin executable, for
-running without a full Cygwin installation.  (Copies the .exe and all required
-Cygwin DLL files into the provided path.)
+Create a bundled "portable" copy of the specified Cygwin executable or library,
+for running without a full Cygwin installation.  (Copies the .exe/.dll and all
+required Cygwin DLL files into the provided path.)
 
 To use bundled commands in Windows CMD, enter the directory and simply call the
 tool by name.  e.g. Assuming you had bundled 'cut' into C:\TEMP\bundle, you
