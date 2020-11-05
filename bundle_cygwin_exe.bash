@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 SCRIPTNAME='Cygwin Executable Bundler'
-LAST_UPDATED='2016-10-12'
+LAST_UPDATED='2020-10-28'
 # Author: Michael Chu, https://github.com/michaelgchu/
 # See Usage() function for purpose and calling details
 #
 # Updates
 # =======
+# 20201028
+# - added -d option to copy dependencies only, and skip copying the executable/library specified.
 # 20161012
 # - using long argument names when calling commands; cleaned up comments
 # 20160425
@@ -29,6 +31,9 @@ alias  debugsay='test $DEV_MODE = "yes" && echo '
 # Whether to suppress standard script messages
 Be_Quiet=false
 
+# Whether to copy dependencies only.
+Deps_Only=false
+
 DEV_MODE='no'
 
 # Listing of all required tools.  The script will abort if any cannot be found
@@ -44,9 +49,9 @@ Usage()
 	cat << EOM
 Usage: ${0##*/} [options] cygwinCommand folderToWriteTo
 
-Create a bundled "portable" copy of the specified Cygwin executable, for
-running without a full Cygwin installation.  (Copies the .exe and all required
-Cygwin DLL files into the provided path.)
+Create a bundled "portable" copy of the specified Cygwin executable or library,
+for running without a full Cygwin installation.  (Copies the .exe/.dll and all
+required Cygwin DLL files into the provided path.)
 
 To use bundled commands in Windows CMD, enter the directory and simply call the
 tool by name.  e.g. Assuming you had bundled 'cut' into C:\TEMP\bundle, you
@@ -67,6 +72,7 @@ OPTIONS
 =======
    -h    Show this message
    -q    Quiet: only output the found records and a header
+   -d    Dependencies only: don't copy the actual DLL/execuable specified
    -D    DEV/DEBUG mode on
          Use twice to run 'set -x'
 
@@ -104,11 +110,12 @@ printTitle()
 
 # Process script args/settings
 Be_Quiet='no'
-while getopts ":hqD" OPTION
+while getopts ":hqdD" OPTION
 do
 	case $OPTION in
 		h) Usage; exit 0 ;;
 		q) Be_Quiet='yes' ;;
+        d) Deps_Only=true ;;
 		D) test $DEV_MODE = 'yes' && set -x || DEV_MODE='yes' ;;
 		*) echo "Warning: ignoring unrecognized option -$OPTARG" ;;
 	esac
@@ -157,10 +164,16 @@ say "Identifying the files to copy for Cygwin binary '$exe' ..."
 # Explanation:
 # - cygcheck: produces the listing of all DLL files required, for each matching executable
 # - grep: filters to include only entries with the 'cygwin*' path
+# - grep (if deps only): removes specified file from list to copy only dependencies
 # - sed: clean up cygcheck output for use in the copy command
 #	("Found" appears if a full path isn't provided)
 # - sort: remove duplicates
-filelist=$(cygcheck "$exe" | grep --ignore-case '\\cygwin' | sed 's/^Found: //; s/^ *//' | sort --unique)
+if [ $Deps_Only = false ] ; then
+	filelist=$(cygcheck "$exe" | grep --ignore-case '\\cygwin' | sed 's/^Found: //; s/^ *//' | sort --unique)
+else
+    exefullpath=$(cygpath --absolute --windows "$exe")
+    filelist=$(cygcheck "$exe" | grep -vF "$exefullpath" | grep --ignore-case '\\cygwin' | sed 's/^Found: //; s/^ *//' | sort --unique)
+fi
 
 say "Copying all the files to the output folder '$dir' ..."
 udir=$(cygpath --absolute --unix "$dir")
