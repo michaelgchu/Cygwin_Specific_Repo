@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 SCRIPTNAME='Cygwin Executable Bundler'
-LAST_UPDATED='2020-10-28'
+LAST_UPDATED='2021-03-01'
 # Author: Michael Chu, https://github.com/michaelgchu/
 # See Usage() function for purpose and calling details
 #
 # Updates
 # =======
+# 20210301
+# - Remove the Dev Mode option and its related pieces (Bash's expand_aliases option, alias debugsay)
 # 20201028
 # - added -d option to copy dependencies only, and skip copying the executable/library specified.
 # 20161012
@@ -20,21 +22,15 @@ LAST_UPDATED='2020-10-28'
 # 20141215
 # - First version
 
-
-shopt -s expand_aliases
-alias  debugsay='test $DEV_MODE = "yes" && echo '
-
 # -------------------------------
 # "Constants", Globals
 # -------------------------------
 
-# Whether to suppress standard script messages
-Be_Quiet=false
+# Whether to print/suppress basic script messages
+Be_Verbose=true
 
 # Whether to copy dependencies only.
 Deps_Only=false
-
-DEV_MODE='no'
 
 # Listing of all required tools.  The script will abort if any cannot be found
 requiredTools='cygpath cygcheck grep sed sort tr cp which'
@@ -73,8 +69,6 @@ OPTIONS
    -h    Show this message
    -q    Quiet: only output the found records and a header
    -d    Dependencies only: don't copy the actual DLL/execuable specified
-   -D    DEV/DEBUG mode on
-         Use twice to run 'set -x'
 
 EOM
 }
@@ -82,9 +76,9 @@ EOM
 
 say()
 {
-# Output the provided message only if Be_Quiet = 'no', i.e. if script not called with -q option
+# Output the provided message only if Be_Verbose = true, i.e. if script not called with -q option
 # The first argument can be a flag for echo, e.g. -e to do escape sequences, -n to not echo a newline
-	test $Be_Quiet = 'no' || return
+	test $Be_Verbose = true || return
 	if [ "${1:0:1}" = '-' ] ; then
 		flag=$1
 		shift
@@ -109,20 +103,18 @@ printTitle()
 # ************************************************************
 
 # Process script args/settings
-Be_Quiet='no'
-while getopts ":hqdD" OPTION
+while getopts ":hqd" OPTION
 do
 	case $OPTION in
 		h) Usage; exit 0 ;;
-		q) Be_Quiet='yes' ;;
-        d) Deps_Only=true ;;
-		D) test $DEV_MODE = 'yes' && set -x || DEV_MODE='yes' ;;
+		q) Be_Verbose=false ;;
+		d) Deps_Only=true ;;
 		*) echo "Warning: ignoring unrecognized option -$OPTARG" ;;
 	esac
 done
 shift $(($OPTIND-1))
 
-if [ $Be_Quiet = 'no' ] ; then
+if $Be_Verbose; then
 	printTitle
 	copyOpts='--verbose'
 else
@@ -139,7 +131,6 @@ test -n "$dir" || {
 }
 
 # Test for all required tools/resources
-debugsay "[Testing for required command(s): $requiredTools]"
 flagCmdsOK='yes'
 for cmd in $requiredTools
 do
